@@ -54,7 +54,7 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, random=True):
+    def __init__(self, inplanes, planes, stride=1, downsample=None):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -66,7 +66,6 @@ class Bottleneck(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
-        self.random = random
 
     def forward(self, x):
         residual = x
@@ -76,7 +75,7 @@ class Bottleneck(nn.Module):
         out = self.relu(out)
 
         out = self.conv2(out)
-        if self.random:
+        if self.training:
             out = out + out.new_empty(out.shape).normal_(std=0.001)
         out = self.bn2(out)
         out = self.relu(out)
@@ -102,8 +101,6 @@ class ResNet(nn.Module):
         n = (depth - 2) // 6
 
         block = Bottleneck if depth >=44 else BasicBlock
-
-        self.random = True
 
         self.inplanes = 16
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1,
@@ -134,7 +131,7 @@ class ResNet(nn.Module):
             )
 
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample, self.random))
+        layers.append(block(self.inplanes, planes, stride, downsample))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes))
@@ -156,10 +153,6 @@ class ResNet(nn.Module):
 
         return x
 
-    def train(self, mode=True):
-        super(ResNet, self).train(mode)
-        self.random = mode
-        print('random', self.random)
 
 def resnet(**kwargs):
     """
