@@ -75,6 +75,7 @@ class Bottleneck(nn.Module):
         out = self.relu(out)
 
         out = self.conv2(out)
+        out = out + out.new_empty(out.shape).normal_(std=0.001)
         out = self.bn2(out)
         out = self.relu(out)
 
